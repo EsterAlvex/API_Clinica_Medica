@@ -1,5 +1,3 @@
-require("dotenv").config();
-
 const express = require('express');
 const jwt = require('jsonwebtoken');
 
@@ -7,8 +5,8 @@ const app = express();
 
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
+const PORT = 3000;
+const JWT_SECRET = "senhaSecreta";
 
 const {Paciente, Usuario} = require('./models');
 
@@ -31,7 +29,7 @@ app.post('/login', async (req, res) => {
     const { usuario, senha } = req.body;
 
     try {
-        const user = await Usuario.findOne({ where: { usuario: usuario } });
+        const user = await Usuario.findOne({ where: { usuario } });
 
         if (!user) {
         
