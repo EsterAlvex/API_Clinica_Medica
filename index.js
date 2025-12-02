@@ -12,6 +12,28 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const {Paciente} = require('./models');
 
+app.get('/', (req, res) => {
+  res.send('Seja bem-vindo a nossa API de clínica!');
+});
+
+app.get('/pacientes', async (req, res) => {
+    try {
+        const pacientes = await Paciente.findAll();
+        res.status(200).json(pacientes);
+    } catch (error) {
+        res.status(500).json({ mensagem: 'Erro ao buscar pacientes.' });
+    }
+});
+app.post('/pacientes', async (req, res) => {
+    try {
+        const novoPaciente = await Paciente.create(req.body);
+        res.status(201).json(novoPaciente);
+    } catch (error) {
+        res.status(400).json({ mensagem: 'Erro ao criar paciente.', erro: error.message });
+    }
+});
+
+
 // Rota de Login para gerar o token
 app.post('/login', (req, res) => {
     const { usuario, senha } = req.body;
@@ -78,14 +100,6 @@ app.get('/pacientes/:id', async (req, res) => {
     }
 });
 
-app.post('/pacientes', async (req, res) => {
-    try {
-        const novoPaciente = await Paciente.create(req.body);
-        res.status(201).json(novoPaciente);
-    } catch (error) {
-        res.status(400).json({ mensagem: 'Erro ao criar paciente.', erro: error.message });
-    }
-});
 
 //Atualizar um paciente 
 app.put('/pacientes/:id', async (req, res) => {
