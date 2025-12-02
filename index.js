@@ -10,20 +10,13 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const {Paciente} = require('./models');
+const {Paciente, Usuario} = require('./models');
 
+//Rotas Públicas
 app.get('/', (req, res) => {
   res.send('Seja bem-vindo a nossa API de clínica!');
 });
 
-app.get('/pacientes', async (req, res) => {
-    try {
-        const pacientes = await Paciente.findAll();
-        res.status(200).json(pacientes);
-    } catch (error) {
-        res.status(500).json({ mensagem: 'Erro ao buscar pacientes.' });
-    }
-});
 app.post('/pacientes', async (req, res) => {
     try {
         const novoPaciente = await Paciente.create(req.body);
@@ -33,20 +26,32 @@ app.post('/pacientes', async (req, res) => {
     }
 });
 
-
 // Rota de Login para gerar o token
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { usuario, senha } = req.body;
 
-    const user = usuarios.find(u => u.usuario === usuario);
+    try {
+        const user = await Usuario.findOne({ where: { usuario: usuario } });
 
-    if (!user || user.senha !== senha) {
-        return res.status(401).json({ mensagem: 'Usuário ou senha do paciente inválidos.' });
+        if (!user) {
+        
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
+        }
+
+        const senhaCorreta = (user.senha === senha);
+        
+        if (!senhaCorreta) {
+            return res.status(401).json({ mensagem: 'Usuário ou senha inválidos.' });
+        }
+
+        const token = jwt.sign({ userId: user.id, usuario: user.usuario }, JWT_SECRET, { expiresIn: '20m' }); 
+
+        return res.json({ mensagem: 'Login bem-sucedido!', token: token });
+
+    } catch (error) {
+        console.error('Erro no login:', error);
+        return res.status(500).json({ mensagem: 'Erro interno no servidor.' });
     }
-
-    const token = jwt.sign({ userId: user.id, usuario: user.usuario }, JWT_SECRET, { expiresIn: '20m' }); 
-
-    res.json({ mensagem: 'Login do paciente bem-sucedido!', token: token });
 });
 
 // Middleware para verificação do JWT
@@ -88,7 +93,7 @@ app.get('/pacientes', verificaJWT, async (req, res) => {
     }
 });
 
-app.get('/pacientes/:id', async (req, res) => {
+app.get('/pacientes/:id', verificaJWT, async (req, res) => {
     try {
         const paciente = await Paciente.findByPk(req.params.id); 
         if (!paciente) {
@@ -102,7 +107,7 @@ app.get('/pacientes/:id', async (req, res) => {
 
 
 //Atualizar um paciente 
-app.put('/pacientes/:id', async (req, res) => {
+app.put('/pacientes/:id', verificaJWT, async (req, res) => {
     try {
         const paciente = await Paciente.findByPk(req.params.id);
         if (!paciente) {
@@ -116,7 +121,7 @@ app.put('/pacientes/:id', async (req, res) => {
 });
 
 //Deletar um paciente
-app.delete('/pacientes/:id', async (req, res) => {
+app.delete('/pacientes/:id', verificaJWT, async (req, res) => {
     try {
         const paciente = await Paciente.findByPk(req.params.id);
         if (!paciente) {
